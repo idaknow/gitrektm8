@@ -1,0 +1,190 @@
+import java.awt.Canvas;
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import java.awt.BorderLayout;
+import javax.swing.JPanel;
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.CardLayout;
+
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JSlider;
+import javax.swing.JTextArea;
+import javax.swing.SwingConstants;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+
+import uk.co.caprica.vlcj.binding.LibVlc;
+import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
+import uk.co.caprica.vlcj.player.MediaPlayerFactory;
+import uk.co.caprica.vlcj.player.embedded.EmbeddedMediaPlayer;
+import uk.co.caprica.vlcj.runtime.RuntimeUtil;
+
+import com.sun.jna.Native;
+import com.sun.jna.NativeLibrary;
+import java.awt.Panel;
+import javax.swing.JEditorPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+import java.awt.Color;
+
+
+
+public class mainframe {
+	
+	JButton b1, playbutton, pausebutton, ffdbutton, rwdbutton;
+	JSlider slider;
+
+	/**
+	 * Launch the application.
+	 */
+	public static void main(final String[] args) {
+        NativeLibrary.addSearchPath(
+	       RuntimeUtil.getLibVlcLibraryName(), "/Applications/vlc-2.0.0/VLC.app/Contents/MacOS/lib"
+	    );
+	    Native.loadLibrary(RuntimeUtil.getLibVlcLibraryName(), LibVlc.class);
+	        
+	    SwingUtilities.invokeLater(new Runnable() {
+	       @Override
+	       public void run() {
+	           mainframe yo = new mainframe(null);
+	       }
+	     });
+	}
+
+	/**
+	 * Initialize the contents of the frame.
+	 */
+	private mainframe(String[] args) {
+		
+        JFrame frame = new JFrame("yo");
+        frame.setTitle("VIDIVOX : BROUGHT TO YOU BY IDA AND HER COOL STORIES BRO");
+		frame.setLocation(100,100);
+		frame.setSize(1050,600);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setVisible(true);
+		
+        
+        MediaPlayerFactory mpf = new MediaPlayerFactory();
+        Canvas c = new Canvas();
+        c.setBackground(Color.black);
+        JPanel panel = new JPanel();
+        c.setBounds(100,500,1050,500);
+        panel.setLayout(new BorderLayout());
+        panel.add(c,BorderLayout.CENTER);
+        panel.setBounds(100,50,1050,600);
+        frame.add(panel, BorderLayout.CENTER);
+        //ADD PANEL FOR FFD AND SHIT
+        JPanel p1 = new JPanel();
+        p1.setBounds(100,900,105,200);
+        frame.add(p1, BorderLayout.SOUTH);
+        //PANEL FOR ADDED AUDIO AND VIDEO AND SHIT
+        JPanel p2 = new JPanel();
+        p2.setBounds(200,1900,105,200);
+        frame.add(p2, BorderLayout.NORTH);
+        
+
+        
+        final EmbeddedMediaPlayer mp = mpf.newEmbeddedMediaPlayer();
+		mp.setVideoSurface(mpf.newVideoSurface(c));
+		mp.playMedia("big_buck_bunny_1_minute.avi");
+
+        rwdbutton = new JButton();
+        rwdbutton.addActionListener(new ActionListener() {
+			boolean rw = true;
+        	public void actionPerformed(ActionEvent e) {
+        		while (rw){
+        			mp.skip(60);
+        		}
+        		if (rw){
+            		
+        			rw = false;
+        		} else {
+        			mp.play();
+        			rw = true;
+        		}
+        	}
+        });
+		rwdbutton.setIcon(new ImageIcon("rw.png"));
+		rwdbutton.setLocation(100, 900);
+		rwdbutton.setBounds(50,10,50,10);
+		p1.add(rwdbutton);
+		
+		
+		playbutton = new JButton();
+        playbutton.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		//boolean once chosen a new video we have a boolean so that it 
+        		if (!mp.isPlaying()){
+        			if (mp != null){
+        				mp.play();
+        			}
+        		} else {
+        			if (mp != null){
+        				mp.start();
+        			}
+        		}
+        	}
+        });
+		playbutton.setIcon(new ImageIcon("play.png"));
+		playbutton.setBounds(50,10,50,10);
+		p1.add(playbutton);
+		
+		
+		pausebutton = new JButton();
+		pausebutton.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+        		mp.pause();
+        	}
+        });
+		pausebutton.setIcon(new ImageIcon("pause.png"));
+		pausebutton.setBounds(50,10,500,10);
+		p1.add(pausebutton);
+		
+		
+		ffdbutton = new JButton();
+		ffdbutton.addActionListener(new ActionListener() { 
+			boolean ffd = false;
+			@Override
+        	public void actionPerformed(ActionEvent e) {
+        		if (ffd){   		
+        			ffd = false;
+        		} else {
+        			mp.play();
+        			ffd = true;
+        		}
+        		while (ffd){
+        			if ( mp.getPosition() +60 < mp.getLength()){
+        			mp.skip(100);
+        			} else {
+        			ffd = false;
+        			}
+        		}
+        	}
+        });
+		ffdbutton.setIcon(new ImageIcon("ffd.png"));
+		ffdbutton.setBounds(50,10,50,10);
+		p1.add(ffdbutton);
+		
+		//SLIDER FOR VOLUME
+		slider = new JSlider();
+		slider.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				mp.setVolume(slider.getValue());
+			}
+		});
+		p1.add(slider);
+		
+		
+		
+		
+		
+		
+	}
+}
+
