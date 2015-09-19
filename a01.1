@@ -164,6 +164,11 @@ public class mainframe {
 		p1.add(ffdbutton);
 		
 		slider = new JSlider();
+		slider.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				mp.setVolume(slider.getValue());
+			}
+		});
 		p1.add(slider);
 		
 		
