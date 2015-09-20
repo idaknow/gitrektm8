@@ -1,0 +1,183 @@
+import java.awt.Dimension;
+
+
+public class MediaSelection extends JPanel implements ActionListener {
+
+	/**
+	 * inititalized variables required
+	 */
+	private static final long serialVersionUID = 1L;
+	private JButton mp3, festival;
+	protected JFrame frame;
+	protected boolean isvideo;
+	private JFileChooser chooser;
+	private String choosertitle;
+	boolean close = false;
+	protected String videoFile;
+	protected String musicFile;
+	JLabel lblA;
+
+	JFrame psmp3 = new JFrame();
+	JPanel pscontentPane;
+
+	/*
+	 * This constructor adds buttons an extra pane if it's mp3
+	 */
+	public MediaSelection(boolean video) {
+		isvideo = video;
+		if (!video){
+			//__________________________________________________________________________ MP3 BUTTON
+			mp3 = new JButton("Add mp3");
+			mp3.addActionListener(this);
+			add(mp3);
+			//__________________________________________________________________________ FESTIVAL BUTTON
+			festival = new JButton("Add Commentary");
+			festival.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					CommentaryAdd.start();
+				}});
+			add(festival);
+			//__________________________________________________________________________ CANCEL BUTTON
+			JButton btnCancel = new JButton("Cancel");
+			btnCancel.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					//.setVisible(false); //THIS ISNT WORKING BRAH REKT M8
+					close = true;
+				}});
+			add(btnCancel);
+		}
+	}
+
+	//__________________________________________________________________________ MP3 BUTTON FUNCTIONALITY POP UP
+	/*
+	 * actionPerformed for creating the JFileChooser
+	 * (non-Javadoc)
+	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+	 */
+	public void actionPerformed(ActionEvent e) {
+		chooser = new JFileChooser(); 
+		chooser.setCurrentDirectory(new java.io.File("."));
+		chooser.setDialogTitle(choosertitle);
+		//---------checking only for avi/ mp4 files or directories
+		FileFilter filter;
+		if (isvideo){
+			filter = new FileFilter() {
+				public String getDescription() {
+					return "AVI videos (*.avi)";
+				}
+				@Override
+				public boolean accept(File f) {
+					if (f.isDirectory()) {
+						return true;
+					} else {
+						String filename = f.getName().toLowerCase();
+						return filename.endsWith(".avi") || filename.endsWith(".mp4") ;
+					}
+				}
+			};
+		} else {//---------------checking only for mp3 files or directories
+			filter = new FileFilter() {
+				public String getDescription() {
+					return "MP3 audio (*.mp3)";
+				}
+				@Override
+				public boolean accept(File f) {
+					if (f.isDirectory()) {
+						return true;
+					} else {
+						String filename = f.getName().toLowerCase();
+						return filename.endsWith(".mp3");
+					}
+				}
+			};
+		}
+		chooser.setFileFilter(filter);
+		chooser.setAcceptAllFileFilterUsed(false);
+		if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) { 
+			if (isvideo){
+				videoFile = chooser.getSelectedFile().getName();
+				System.out.println("Video : " + videoFile);
+				Mainframe.setVideoSource(videoFile);
+				Mainframe.changeVideo();
+			} else {
+				musicFile = chooser.getSelectedFile().getName();
+				System.out.println("Music : " + musicFile);
+				Mainframe.setAudioSource(musicFile);
+				popupSubmitmp3();
+			}
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see javax.swing.JComponent#getPreferredSize()
+	 */
+	public Dimension getPreferredSize(){ return new Dimension(200, 200); }
+
+	/*
+	 * This function starts the frame if it is a video
+	 */
+	public void start(boolean video ){
+		isvideo = video;
+		if(!video){
+			frame = new JFrame("");
+			MediaSelection panel = new MediaSelection(video);
+			frame.addWindowListener(
+					new WindowAdapter() {
+						public void windowClosing(WindowEvent e) {
+							System.exit(0);
+						}});
+			frame.getContentPane().add(panel);
+			frame.setSize(panel.getPreferredSize());
+			frame.setVisible(true);
+		}
+	}
+
+	public void popupSubmitmp3() {
+		psmp3 = new JFrame();
+		psmp3.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		psmp3.setBounds(100, 100, 450, 300);
+		pscontentPane = new JPanel();
+		pscontentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		psmp3.setContentPane(pscontentPane);
+		pscontentPane.setLayout(null);
+
+		lblA = new JLabel("Do you want to submit this audio to this video?");
+		lblA.setBounds(12, 43, 426, 31);
+		pscontentPane.add(lblA);
+
+		JButton btnCancel = new JButton("cancel");
+		btnCancel.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				psmp3.setVisible(false);
+			}
+		});
+		btnCancel.setBounds(321, 235, 117, 25);
+		pscontentPane.add(btnCancel);
+
+		JButton btnYesIDo = new JButton("YES I DO");
+		btnYesIDo.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// CODE if video has audio already - ffmpeg -i video.mp4 -an outputNOaudio.mp4
+				if ((Mainframe.getVideoSource() != null) && (Mainframe.getMusicSource() != null)){
+					String cmd = "ffmpeg -i " + Mainframe.getVideoSource() + " -i " + Mainframe.getMusicSource() + " mixed.avi"; //need a naming feature, now should delete mixed.avi before every time
+					ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", cmd);
+					//redirect error streams
+					try {
+						Process p = pb.start();
+					} catch (IOException e1) {e1.printStackTrace();}
+					//close all windows
+					Mainframe.setVideoSource("mixed.avi");
+					Mainframe.changeVideo();
+					psmp3.setVisible(false);
+				} else {
+					lblA.setText("You must press cancel and go back, make sure you select a valid video AND music file");
+				}
+			}
+		});
+		btnYesIDo.setBounds(23, 235, 117, 25);
+		pscontentPane.add(btnYesIDo);
+		psmp3.setVisible(true);
+	}
+
+}
