@@ -42,7 +42,7 @@ public class Mainframe {
 	JButton b1, playbutton, pausebutton, ffdbutton, rwdbutton, mp3Selectbtn, videoSelectbtn, mutebutton;
 	JSlider slider;
 	protected static EmbeddedMediaPlayer mp;
-	protected static String media;
+	protected static String video, audio;
 
 	/**
 	 * Launch the application.
@@ -96,7 +96,7 @@ public class Mainframe {
 
 		mp = mpf.newEmbeddedMediaPlayer();
 		mp.setVideoSurface(mpf.newVideoSurface(c));
-		mp.playMedia("big_buck_bunny_1_minute.avi");
+		//mp.playMedia("big_buck_bunny_1_minute.avi");
 
 		//__________________________________________________________________________ REWIND BUTTON <-----halp
 		rwdbutton = new JButton();
@@ -197,7 +197,6 @@ public class Mainframe {
 				
 			}
 		});
-		
 		mutebutton.setBounds(50,10,500,10);
 		p1.add(mutebutton);
 
@@ -236,12 +235,22 @@ public class Mainframe {
 		p1.add(slider);
 	}
 	
-	public static void setMediaSource(String s){
-		media = s;
+	public static void setVideoSource(String s){
+		video = s;
+	}
+	public static void setAudioSource(String s){
+		audio = s;
 	}
 	
 	public static void changeVideo(){
-		mp.playMedia(media);
+		mp.playMedia(video);
+	}
+	
+	public static String getVideoSource(){
+		return video;
+	}
+	public static String getMusicSource(){
+		return audio;
 	}
 }
 
