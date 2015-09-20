@@ -3,8 +3,11 @@ import java.awt.BorderLayout;
 
 public class CommentaryAdd extends JFrame {
 
+	/*
+	 * declared variables required
+	 */
 	private JPanel contentPane;
-	private static CommentaryAdd frame;
+	protected static CommentaryAdd frame;
 	private JTextArea txtrA;
 	protected String commentary;
 	/**
@@ -24,7 +27,7 @@ public class CommentaryAdd extends JFrame {
 	}
 
 	/**
-	 * Create the frame.
+	 * Create the frame w/ buttons & functionality
 	 */
 	public CommentaryAdd() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -34,6 +37,7 @@ public class CommentaryAdd extends JFrame {
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 
+		//__________________________________________________________________________ COMMENTARY TO ADD
 		txtrA = new JTextArea();
 		txtrA.setBackground(Color.CYAN);
 		txtrA.setLineWrap(true);
@@ -41,51 +45,59 @@ public class CommentaryAdd extends JFrame {
 		txtrA.setBounds(25, 37, 392, 137);
 		contentPane.add(txtrA);
 
-		JButton btnNewButton = new JButton("Preview");
-		btnNewButton.addActionListener(new ActionListener() {
+		//__________________________________________________________________________ PREVIEW BUTTON
+		JButton btnPreview = new JButton("Preview");
+		btnPreview.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (txtLengthCheck(txtrA.getText())){
-					festivalYo();
+					festivalPreview();
 				}
 			}
 		});
-		btnNewButton.setBounds(25, 235, 117, 25);
-		contentPane.add(btnNewButton);
+		btnPreview.setBounds(25, 235, 117, 25);
+		contentPane.add(btnPreview);
 
-		JButton btnNewButton_1 = new JButton("save to mp3");
-		btnNewButton_1.addActionListener(new ActionListener() {
+		//__________________________________________________________________________ SAVE TO MP3 BUTTON
+		JButton saveToMp3Btn = new JButton("save to mp3");
+		saveToMp3Btn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (txtLengthCheck(txtrA.getText())){
 				commentary = "echo "+ "\"" + txtrA.getText() + "\"";
-				ProcessBuilder pb1 = new ProcessBuilder("/bin/bash","-c", commentary + " > filename.txt");
+				//ProcessBuilder pb1 = new ProcessBuilder("/bin/bash","-c", commentary + " > filename.txt");
 				ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c","text2wave filename.txt -o MyWav.mp3");
 				try {
-					Process p1 = pb1.start();
+					//Process p1 = pb1.start();
 					Process p = pb.start();
 				} catch (IOException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}}
+				//MediaSelection.popupSubmitmp3();
 			}
 		});
-		btnNewButton_1.setBounds(148, 235, 139, 25);
-		contentPane.add(btnNewButton_1);
+		saveToMp3Btn.setBounds(148, 235, 139, 25);
+		contentPane.add(saveToMp3Btn);
 
-		JButton btnNewButton_2 = new JButton("Cancel");
-		btnNewButton_2.addActionListener(new ActionListener() {
+		//__________________________________________________________________________ CANCEL BUTTON
+		JButton cancelBtn = new JButton("Cancel");
+		cancelBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				frame.setVisible(false);
 			}
 		});
-		btnNewButton_2.setBounds(311, 235, 117, 25);
-		contentPane.add(btnNewButton_2);
+		cancelBtn.setBounds(311, 235, 117, 25);
+		contentPane.add(cancelBtn);
 
+		//__________________________________________________________________________ MAX WORDS LABEL
 		JLabel lblMaxWords = new JLabel("Max. 100 characters");
 		lblMaxWords.setBounds(295, 186, 133, 15);
 		contentPane.add(lblMaxWords);
 	}
 
+	/*
+	 * Checks the length of the input is less 101 characters
+	 * This means the text won't be too long that festival will start to struggle to keep up
+	 */
 	protected boolean txtLengthCheck(String txt){
 		if (txt.length() <= 100){
 			return true;
@@ -93,13 +105,15 @@ public class CommentaryAdd extends JFrame {
 		return false;
 	}
 
-	protected void festivalYo(){
-		commentary = "echo " + txtrA.getText() + " | festival --tts";
+	/*
+	 * Does the festival preview
+	 */
+	protected void festivalPreview(){
+		commentary = "echo \" " + txtrA.getText() + "\" | festival --tts";
 		ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c" , commentary);
 		try {
 			Process process = pb.start();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 	}
