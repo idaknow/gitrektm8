@@ -1,0 +1,106 @@
+import java.awt.BorderLayout;
+
+
+public class CommentaryAdd extends JFrame {
+
+	private JPanel contentPane;
+	private static CommentaryAdd frame;
+	private JTextArea txtrA;
+	protected String commentary;
+	/**
+	 * Launch the application.
+	 */
+	public static void start() {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					frame = new CommentaryAdd();
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the frame.
+	 */
+	public CommentaryAdd() {
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setBounds(100, 100, 450, 300);
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+		setContentPane(contentPane);
+		contentPane.setLayout(null);
+
+		txtrA = new JTextArea();
+		txtrA.setBackground(Color.CYAN);
+		txtrA.setLineWrap(true);
+		txtrA.setText("Add Commentary here");
+		txtrA.setBounds(25, 37, 392, 137);
+		contentPane.add(txtrA);
+
+		JButton btnNewButton = new JButton("Preview");
+		btnNewButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (txtLengthCheck(txtrA.getText())){
+					festivalYo();
+				}
+			}
+		});
+		btnNewButton.setBounds(25, 235, 117, 25);
+		contentPane.add(btnNewButton);
+
+		JButton btnNewButton_1 = new JButton("save to mp3");
+		btnNewButton_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (txtLengthCheck(txtrA.getText())){
+				commentary = "echo "+ "\"" + txtrA.getText() + "\"";
+				ProcessBuilder pb1 = new ProcessBuilder("/bin/bash","-c", commentary + " > filename.txt");
+				ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c","text2wave filename.txt -o MyWav.mp3");
+				try {
+					Process p1 = pb1.start();
+					Process p = pb.start();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}}
+			}
+		});
+		btnNewButton_1.setBounds(148, 235, 139, 25);
+		contentPane.add(btnNewButton_1);
+
+		JButton btnNewButton_2 = new JButton("Cancel");
+		btnNewButton_2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				frame.setVisible(false);
+			}
+		});
+		btnNewButton_2.setBounds(311, 235, 117, 25);
+		contentPane.add(btnNewButton_2);
+
+		JLabel lblMaxWords = new JLabel("Max. 100 characters");
+		lblMaxWords.setBounds(295, 186, 133, 15);
+		contentPane.add(lblMaxWords);
+	}
+
+	protected boolean txtLengthCheck(String txt){
+		if (txt.length() <= 100){
+			return true;
+		}
+		return false;
+	}
+
+	protected void festivalYo(){
+		commentary = "echo " + txtrA.getText() + " | festival --tts";
+		ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c" , commentary);
+		try {
+			Process process = pb.start();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+	}
+}
