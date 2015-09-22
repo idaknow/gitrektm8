@@ -36,6 +36,9 @@ public class MediaSelection extends JPanel implements ActionListener {
 	protected JFrame psmp3 = new JFrame();
 	protected JPanel pscontentPane, errorPane;
 	protected String extension;
+	protected FileFilter filter;
+	private boolean acceptableName = true;
+
 	/*
 	 * This constructor adds buttons an extra pane if it's mp3
 	 */
@@ -44,9 +47,9 @@ public class MediaSelection extends JPanel implements ActionListener {
 		if (!video){
 			//__________________________________________________________________________ MP3 BUTTON
 			mp3 = new JButton("Add mp3");
-			//if()
 			mp3.addActionListener(this);
 			add(mp3);
+
 			//__________________________________________________________________________ FESTIVAL BUTTON
 			festival = new JButton("Add Commentary");
 			festival.addActionListener(new ActionListener() {
@@ -55,17 +58,6 @@ public class MediaSelection extends JPanel implements ActionListener {
 					CommentaryAdd.start();
 				}});
 			add(festival);
-			//__________________________________________________________________________ CANCEL BUTTON
-			/*JButton btnCancel = new JButton("Cancel");
-			add(btnCancel);
-			btnCancel.addActionListener(new ActionListener() {
-
-				public void actionPerformed(ActionEvent e) {
-					//.setVisible(false); //THIS ISNT WORKING BRAH REKT M8
-					//frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-					frame.setVisible(false);
-				}});*/
-
 		}
 	}
 
@@ -80,54 +72,27 @@ public class MediaSelection extends JPanel implements ActionListener {
 		chooser = new JFileChooser(); 
 		chooser.setCurrentDirectory(new java.io.File("."));
 		chooser.setDialogTitle(choosertitle);
-		FileFilter filter;
+
 		if (isvideo){ //---------checking only for avi/ mp4 files or directories
-			filter = new FileFilter() {
-				public String getDescription() {
-					return "AVI videos (*.avi)";
-				}
-				@Override
-				public boolean accept(File f) {
-					if (f.isDirectory()) {
-						return true;
-					} else {
-						String filename = f.getName().toLowerCase();
-						return filename.endsWith(".avi") || filename.endsWith(".mp4") ;
-					}
-				}
-			};
+			videoFilter();
 		} else {//---------------checking only for mp3 files or directories
-			filter = new FileFilter() {
-				public String getDescription() {
-					return "MP3 audio (*.mp3)";
-				}
-				@Override
-				public boolean accept(File f) {
-					if (f.isDirectory()) {
-						return true;
-					} else {
-						String filename = f.getName().toLowerCase();
-						return filename.endsWith(".mp3");
-					}
-				}
-			};
+			audioFilter();
 		}
 		chooser.setFileFilter(filter);
 		chooser.setAcceptAllFileFilterUsed(false);
 		if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) { 
 			if (isvideo){
 				videoFile = chooser.getSelectedFile().getName();
-				System.out.println("Video : " + videoFile);
 				Mainframe.setVideoSource(videoFile);
 				Mainframe.changeVideo();
 			} else {
 				musicFile = chooser.getSelectedFile().getName();
-				System.out.println("Music : " + musicFile);
 				Mainframe.setAudioSource(musicFile);
 				popupSubmitmp3();
 			}
 		}
 	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see javax.swing.JComponent#getPreferredSize()
@@ -185,46 +150,45 @@ public class MediaSelection extends JPanel implements ActionListener {
 				if ((Mainframe.getAudioSource() != null)){
 
 					String userVideoName = nameFilePopup();//get file name to save video as
-					Object[] options = { "OK" };
-					boolean acceptableName = true;
+					if (userVideoName != null){
+						nameWithExtensions(userVideoName);
 
-					// check name doesn't already exist
-					//JOptionPane.showOptionDialog(psmp3, "Name already exists. Enter a unique name", "Error",JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
-					// check name doesn't contain spaces, symbols, isn't null
-					nameWithExtensions(userVideoName);
-					File f = new File(userVideoName + extension);//not accouting for extension
-					if (!MediaSelection.checkForSpaces(userVideoName)){
-						errorMessage("Spaces bro");
-						acceptableName = false;
-					} else if (f.exists()) {
-						errorMessage("existingfile");
-						acceptableName = false;
-					}
-					//JOptionPane.showOptionDialog(psmp3, "Name already exists. Enter a unique name", "Error",JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
-					// check extension
+						File f = new File(userVideoName + extension);//not accouting for extension
 
-					if (acceptableName){
-						//delete audio off actual video
-						String cmd1 = "ffmpeg -i " + Mainframe.getVideoSource() + " -an .vid.avi";
-						ProcessBuilder pb1 = new ProcessBuilder("/bin/bash", "-c", cmd1);
-						//redirect error streams
-						try {
-							Process p1 = pb1.start();
-						} catch (IOException e1) {e1.printStackTrace();}
-						Mainframe.setVideoSource(".vid.avi");
+						if (!MediaSelection.checkForSpaces(userVideoName)){ // check name doesn't contain spaces, symbols, isn't null
+							errorMessage("Spaces bro");
+							acceptableName = false;
+						} else if (f.exists()) { // check name doesn't already exist
+							errorMessage("existingfile");
+							acceptableName = false;
+						} else {
+							acceptableName = true;
+						}
 
-						String cmd2 = "ffmpeg -i " + Mainframe.getVideoSource() + " -i " + Mainframe.getAudioSource() + " " + userVideoName + extension; //combines the video and audio
-						ProcessBuilder pb2 = new ProcessBuilder("/bin/bash", "-c", cmd2);
-						//redirect error streams
-						try {
-							Process p2 = pb2.start();
-						} catch (IOException e1) {e1.printStackTrace();}
-						//close all windows
-						Mainframe.setVideoSource(userVideoName + extension);
-						Mainframe.changeVideo();
-						psmp3.setVisible(false);
+						if (acceptableName){
+							//delete audio off actual video
+							String cmd1 = "ffmpeg -i " + Mainframe.getVideoSource() + " -an .vid.avi";
+							ProcessBuilder pb1 = new ProcessBuilder("/bin/bash", "-c", cmd1);
+							//redirect error streams
+							try {
+								Process p1 = pb1.start();
+							} catch (IOException e1) {e1.printStackTrace();}
+							Mainframe.setVideoSource(".vid.avi");
 
-						//SET FRAME TO DIE WHEN THIS DIES TOO _______________________________________________________________________________
+							String cmd2 = "ffmpeg -i " + Mainframe.getVideoSource() + " -i " + Mainframe.getAudioSource() + " " + userVideoName + extension; //combines the video and audio
+							ProcessBuilder pb2 = new ProcessBuilder("/bin/bash", "-c", cmd2);
+							//redirect error streams
+							try {
+								Process p2 = pb2.start();
+							} catch (IOException e1) {e1.printStackTrace();}
+
+							//close all windows
+							Mainframe.setVideoSource(userVideoName + extension);
+							Mainframe.changeVideo();
+							psmp3.setVisible(false);
+
+							//SET FRAME TO DIE WHEN THIS DIES TOO _______________________________________________________________________________
+						}
 					}
 				}
 			}
@@ -234,17 +198,18 @@ public class MediaSelection extends JPanel implements ActionListener {
 		psmp3.setVisible(true);
 	}
 
+	/*
+	 * bring JFrame frame to the front
+	 */
 	public void BringToFront() {
 		frame.setVisible(true);
 	}
 
+	/*
+	 * asks user for new file name pop up
+	 */
 	public String nameFilePopup() {
 		String info = JOptionPane.showInputDialog(this, "Save new video File as:");
-		return info;
-	}
-
-	public String noSymbolsSpacesPopUp() {
-		String info = JOptionPane.showInputDialog(this, "File name must contain no symbols/ spaces");
 		return info;
 	}
 
@@ -252,63 +217,67 @@ public class MediaSelection extends JPanel implements ActionListener {
 	 * Checks that a video/ audio name that user inputs contains and avi or mp4 extension
 	 */
 	public void nameWithExtensions(String s){
-		if (isvideo){
-			extension = ".avi";
-			if (s.endsWith(".avi")){
-				extension = "";
-			} else if (s.endsWith(".mp4")){
-				extension = ".mp4";
-			}
-		} else {
-			extension = ".mp3";
-			if (s.endsWith(".mp3")){
-				extension = "";
-			}
+		extension = ".mp4";
+		if (s.endsWith(".avi")){
+			extension = "";
+		} else if (s.endsWith(".mp4")){
+			extension = "";
 		}
-		//return s;
 	}
 
 	/*
 	 * Checks if video/ audio name contains a space character
 	 */
 	public static boolean checkForSpaces(String s){
-		if (s == null| s.contains(" ") | s.contains("\t") | s.contains("l")){
+		if (s == null| s.contains(" ") | s.contains("\t")){
 			return false;
 		}
 		return true;
 	}
 
 	/*
-	 * Check if filename already exists
+	 * sets JChooser filter for videos
 	 */
-	public static boolean noExistingFiles(String s){
-		return true;
+	public void videoFilter(){
+		filter = new FileFilter() {
+			public String getDescription() {
+				return "AVI videos (*.avi)";
+			}
+			@Override
+			public boolean accept(File f) {
+				if (f.isDirectory()) {
+					return true;
+				} else {
+					String filename = f.getName().toLowerCase();
+					return filename.endsWith(".avi") || filename.endsWith(".mp4") ;
+				}
+			}
+		};
+	}
+
+	/*
+	 * sets JChooser filter for audios
+	 */
+	public void audioFilter(){
+		filter = new FileFilter() {
+			public String getDescription() {
+				return "MP3 audio (*.mp3)";
+			}
+			@Override
+			public boolean accept(File f) {
+				if (f.isDirectory()) {
+					return true;
+				} else {
+					String filename = f.getName().toLowerCase();
+					return filename.endsWith(".mp3");
+				}
+			}
+		};
 	}
 
 	public void errorMessage(String error){//bring to front doe
-		errorFrame = new JFrame();
-		errorFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		errorFrame.setBounds(500, 170, 200, 170);
-		errorPane = new JPanel();
-		errorPane.setBorder(new EmptyBorder(0, 0, 5, 5));
-		errorFrame.setContentPane(errorPane);
-		errorPane.setLayout(null);
-
-		JLabel lblA = new JLabel(error);
-		lblA.setBounds(12, 43, 426, 31);
-		errorPane.add(lblA);
-		errorFrame.setVisible(true);
-
-		JButton btnOK = new JButton("OK");
-		btnOK.setBounds(40, 100, 117, 25);
-		btnOK.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				nameFilePopup();
-				errorFrame.setVisible(false);
-			}
-		});
-		//btnOK.setColor();
-		errorFrame.add(btnOK);
+		//JOptionPane.showConfirmDialog(this, error); 
+		JOptionPane.showMessageDialog(this, error);
 	}
 
 }
