@@ -29,6 +29,7 @@ import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
 import java.awt.Panel;
 import javax.swing.JEditorPane;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -39,10 +40,13 @@ import java.io.File;
 
 public class Mainframe {
 
-	JButton b1, playbutton, pausebutton, ffdbutton, rwdbutton, mp3Selectbtn, videoSelectbtn, mutebutton;
-	JSlider slider;
+	protected JButton b1, playbutton, pausebutton, ffdbutton, rwdbutton, mp3Selectbtn, videoSelectbtn, mutebutton;
+	protected JSlider slider;
+	protected JFrame psmp3;
+	protected JPanel pscontentPane;
 	protected static EmbeddedMediaPlayer mp;
 	protected static String video, audio;
+	boolean ffd = false;
 
 	/**
 	 * Launch the application.
@@ -66,37 +70,41 @@ public class Mainframe {
 	 */
 	private Mainframe(String[] args) {
 
-		JFrame frame = new JFrame("yo");
-		frame.setTitle("VIDIVOX : BROUGHT TO YOU BY IDA AND HER COOL STORIES BRO");
+		//Creates the main JFrame
+		JFrame frame = new JFrame("mainAp");
+		frame.setTitle("VIDIVOX : BY IDA & ABBY");
 		frame.setLocation(100,100);
 		frame.setSize(1050,600);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
-
-
+		
+		//creates main media player factory with canvas
 		MediaPlayerFactory mpf = new MediaPlayerFactory();
 		Canvas c = new Canvas();
 		c.setBackground(Color.black);
-		JPanel panel = new JPanel();
 		c.setBounds(100,500,1050,500);
-		panel.setLayout(new BorderLayout());
-		panel.add(c,BorderLayout.CENTER);
-		panel.setBounds(100,50,1050,600);
-		frame.add(panel, BorderLayout.CENTER);
-		//ADD PANEL FOR FFD AND SHIT
+		//creates panel that you put the video(canvas & factory) on
+		JPanel mediaPanel = new JPanel();
+		mediaPanel.setLayout(new BorderLayout());
+		mediaPanel.add(c,BorderLayout.CENTER);
+		mediaPanel.setBounds(100,50,1050,600);
+		frame.add(mediaPanel, BorderLayout.CENTER);
+		//ADD PANEL FOR ALL SOUTH BUTTONS (PLAY, PAUSE, RW, FFD, MUTE, VOL SLIDER)
 		JPanel p1 = new JPanel();
 		p1.setBounds(100,900,105,200);
 		frame.add(p1, BorderLayout.SOUTH);
-		//PANEL FOR ADDED AUDIO AND VIDEO AND SHIT
+		p1.setBackground(Color.black);
+		//PANEL FOR ADDED AUDIO AND VIDEO AT NORTH
 		JPanel p2 = new JPanel();
 		p2.setBounds(200,1900,105,200);
 		frame.add(p2, BorderLayout.NORTH);
+		p2.setBackground(Color.black);
+		//p2.setLayout(null);
 
-
-
+		//creates media player where video is played on
 		mp = mpf.newEmbeddedMediaPlayer();
 		mp.setVideoSurface(mpf.newVideoSurface(c));
-		//mp.playMedia("big_buck_bunny_1_minute.avi");
+		//mp.playMedia("big_buck_bunny_1_minute.avi"); // this is used so when testing we don't have to rechoose the video every time
 
 		//__________________________________________________________________________ REWIND BUTTON <-----halp
 		rwdbutton = new JButton();
@@ -105,22 +113,18 @@ public class Mainframe {
 			public void actionPerformed(ActionEvent e) {
 				if (rw){
 					rw = false;
-				} else {
-					mp.play();
+					mp.setRate((float) 1);
+				}else {
 					rw = true;
+					mp.setRate((float) -15);
 				}
-				while (rw)
-					if ( mp.getPosition() - 20 < 0){
-						mp.skip(-20);
-					} else {
-						rw = false;
-					}
 			}
-
 		});
 		rwdbutton.setIcon(new ImageIcon("rw.png"));
 		rwdbutton.setLocation(100, 900);
 		rwdbutton.setBounds(50,10,50,10);
+		//rwdbutton.setBackground(null);
+		//rwdbutton.setBorder(null);
 		p1.add(rwdbutton);
 
 		//__________________________________________________________________________ PLAY BUTTON
@@ -130,11 +134,13 @@ public class Mainframe {
 				//boolean once chosen a new video we have a boolean so that it 
 				if (!mp.isPlaying()){
 					if (mp != null){
+						mp.setRate((float) 1);
 						mp.play();
 					}
 				} else {
 					if (mp != null){
 						mp.start();
+						mp.setRate((float) 1);
 					}
 				}
 			}
@@ -154,26 +160,19 @@ public class Mainframe {
 		pausebutton.setBounds(50,10,500,10);
 		p1.add(pausebutton);
 
-		//__________________________________________________________________________ FAST FORWARD BUTTON     <-----halp
+		//__________________________________________________________________________ FAST FORWARD BUTTON
 		ffdbutton = new JButton();
 		ffdbutton.addActionListener(new ActionListener() { 
-			boolean ffd = false;
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (ffd){   		
+				if (ffd){
 					ffd = false;
-				} else {
-					mp.play();
+					mp.setRate((float) 1);
+				}else {
 					ffd = true;
+					mp.setRate((float) 10);
 				}
-				while (ffd){
-					if ( mp.getPosition() +40 < mp.getLength()){
-						mp.skip(40);
-					} else {
-						ffd = false;
-					}
-				}
-			}
+			};
 		});
 		ffdbutton.setIcon(new ImageIcon("ffd.png"));
 		ffdbutton.setBounds(50,10,50,10);
@@ -182,7 +181,7 @@ public class Mainframe {
 		//__________________________________________________________________________ MUTE BUTTON
 		mutebutton = new JButton();
 		mutebutton.setIcon(new ImageIcon("mute.png"));
-		mutebutton.addActionListener(new ActionListener() { ///WORKS PROPERLY YET
+		mutebutton.addActionListener(new ActionListener() {
 			int sliderValue = 50;
 			public void actionPerformed(ActionEvent e) {
 				if (mp.isMute()){
@@ -194,36 +193,65 @@ public class Mainframe {
 					slider.setValue(0);
 				}
 				mp.mute();
-				
 			}
 		});
 		mutebutton.setBounds(50,10,500,10);
 		p1.add(mutebutton);
 
 		//__________________________________________________________________________ VIDEO SELECT TO PLAY BUTTON
-		videoSelectbtn = new JButton("add Video");
+		videoSelectbtn = new JButton("ADD VIDEO");
 		videoSelectbtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				MediaSelection ms = new MediaSelection(true);
 				mp.pause();
 				ms.actionPerformed(e);
-				mp.play();
+				//mp.play();
 			}
 		});
 		p2.add(videoSelectbtn);
 
-		//__________________________________________________________________________ AUDIO SELECT TO PLAY BUTTON <-----halp freeze video whilst adding
-		mp3Selectbtn = new JButton("add Audio");
+		//__________________________________________________________________________ AUDIO SELECT TO PLAY BUTTON
+		mp3Selectbtn = new JButton("ADD AUDIO");
 		mp3Selectbtn.addActionListener(new ActionListener() {
+			MediaSelection ms = new MediaSelection(false);
 			public void actionPerformed(ActionEvent e) {
-				MediaSelection ms = new MediaSelection(false);
 				mp.pause();
-				ms.start(false);
-				mp.play();
+				if (Mainframe.getVideoSource() == null){
+					// if there is no video chosen
+					// create an error JFrame
+					psmp3 = new JFrame();
+					psmp3.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+					psmp3.setBounds(500, 170, 200, 170);
+					pscontentPane = new JPanel();
+					pscontentPane.setBorder(new EmptyBorder(0, 0, 5, 5));
+					psmp3.setContentPane(pscontentPane);
+					pscontentPane.setLayout(null);
+
+					JLabel lblA = new JLabel("Please select a video file");
+					lblA.setBounds(12, 43, 426, 31);
+					pscontentPane.add(lblA);
+					psmp3.setVisible(true);
+
+					JButton btnOK = new JButton("OK");
+					btnOK.setBounds(40, 100, 117, 25);
+					btnOK.addActionListener(new ActionListener() {
+						public void actionPerformed(ActionEvent e) {
+							psmp3.setVisible(false);
+						}
+					});
+					//btnOK.setColor();
+					psmp3.add(btnOK);
+
+				} else if (!ms.isMSOpen){
+					ms.start(false);
+				} else if (ms.isMSOpen){
+					ms.BringToFront();
+				}
+				//mp.play();
 			}
 		});
+		mp3Selectbtn.setBounds(503, 12, 500, 25);
 		p2.add(mp3Selectbtn);
-
 
 		//__________________________________________________________________________ VOLUME SLIDER
 		slider = new JSlider();
@@ -235,22 +263,30 @@ public class Mainframe {
 		p1.add(slider);
 	}
 	
-	public static void setVideoSource(String s){
-		video = s;
-	}
-	public static void setAudioSource(String s){
-		audio = s;
-	}
+	/*
+	 * Set's video as the input String s from other classes
+	 */
+	protected static void setVideoSource(String s){ video = s; }
 	
-	public static void changeVideo(){
-		mp.playMedia(video);
-	}
+	/*
+	 * Set's audio as the input String s from other classes
+	 */
+	protected static void setAudioSource(String s){ audio = s; }
 	
-	public static String getVideoSource(){
-		return video;
-	}
-	public static String getMusicSource(){
-		return audio;
-	}
+	/*
+	 * Changes the current video media being played
+	 */
+	protected static void changeVideo(){ mp.playMedia(video);}
+	
+	/*
+	 * returns the current video
+	 */
+	protected static String getVideoSource(){ return video; }
+	
+	/*
+	 * returns the current audio
+	 */
+	protected static String getAudioSource(){ return audio; }
+
 }
 
