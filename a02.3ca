@@ -27,11 +27,14 @@ public class CommentaryAdd extends JFrame {
 	protected static CommentaryAdd frame;
 	private JTextArea txtrA;
 	protected String commentary;
-	JFrame errorFrame;
-	JPanel errorPane;
-	String extension;
+	protected JFrame errorFrame;
+	protected JPanel errorPane;
+	protected String extension;
+	protected String userMp3Name = null;
+	protected boolean acceptableName = false;
+
 	/**
-	 * Launch the application.
+	 * Launch the frame.
 	 */
 	public static void start() {
 		EventQueue.invokeLater(new Runnable() {
@@ -84,33 +87,36 @@ public class CommentaryAdd extends JFrame {
 		JButton saveToMp3Btn = new JButton("save to mp3");
 		saveToMp3Btn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (txtLengthCheck(txtrA.getText())){
+				if (txtLengthCheck(txtrA.getText())){ // checks length of text < 100 characters
 
-					String userMp3Name = nameFilePopup();
-					boolean acceptableName = true;
+					userMp3Name = nameFilePopup();
+					if (userMp3Name != null){
+						nameWithExtensions(userMp3Name);// checks if name has extension
 
-					// check name doesn't already exist
-					//JOptionPane.showOptionDialog(psmp3, "Name already exists. Enter a unique name", "Error",JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
-					// check name doesn't contain spaces, symbols, isn't null
-					nameWithExtensions(userMp3Name);
-					File f = new File(userMp3Name + extension);//not accouting for extension
-					if (!MediaSelection.checkForSpaces(userMp3Name)){
-						errorMessage("Spaces bro");
-						acceptableName = false;
-					} else if (f.exists()) {
-						errorMessage("existingfile");
-						acceptableName = false;
+						File f = new File(userMp3Name + extension);//not accouting for extension
+						if (!MediaSelection.checkForSpaces(userMp3Name)){ // check name doesn't contain spaces, symbols, isn't null
+							errorMessage("Spaces bro");
+							acceptableName = false;
+						} else if (f.exists()) { // check name doesn't already exist
+							errorMessage("existingfile");
+							acceptableName = false;
+						} else { // name doesn't exist and passed checkForSpaces
+							acceptableName = true;
+						}
+
+						if (acceptableName){
+							commentary = "echo "+ "\"" + txtrA.getText() + "\"";
+							ProcessBuilder pb1 = new ProcessBuilder("/bin/bash","-c", commentary + " > .filename.txt");
+							ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c","text2wave .filename.txt -o " + userMp3Name + extension);
+							try {
+								Process p1 = pb1.start();
+								Process p = pb.start();
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
+						}
 					}
-					
-					commentary = "echo "+ "\"" + txtrA.getText() + "\"";
-					ProcessBuilder pb1 = new ProcessBuilder("/bin/bash","-c", commentary + " > .filename.txt");
-					ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c","text2wave .filename.txt -o " + userMp3Name + ".mp3");
-					try {
-						Process p1 = pb1.start();
-						Process p = pb.start();
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					}}
+				}
 				//MediaSelection.popupSubmitmp3();
 			}
 		});
@@ -137,7 +143,7 @@ public class CommentaryAdd extends JFrame {
 	 * Checks the length of the input is less 101 characters
 	 * This means the text won't be too long that festival will start to struggle to keep up
 	 */
-	protected boolean txtLengthCheck(String txt){
+	private boolean txtLengthCheck(String txt){
 		if (txt.length() <= 100){
 			return true;
 		}
@@ -147,7 +153,7 @@ public class CommentaryAdd extends JFrame {
 	/*
 	 * Does the festival preview
 	 */
-	protected void festivalPreview(){
+	private void festivalPreview(){
 		commentary = "echo \" " + txtrA.getText() + "\" | festival --tts";
 		ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c" , commentary);
 		try {
@@ -156,45 +162,29 @@ public class CommentaryAdd extends JFrame {
 			e1.printStackTrace();
 		}
 	}
-	public String nameFilePopup() {
+
+	/*
+	 * This creates a pop up asking for the file name input
+	 */
+	private String nameFilePopup() {
 		String info = JOptionPane.showInputDialog(this, "Save new MP3 File as:");
 		return info;
 	}
 
-	public void errorMessage(String error){
-		errorFrame = new JFrame();
-		errorFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		errorFrame.setBounds(500, 170, 200, 170);
-		errorPane = new JPanel();
-		errorPane.setBorder(new EmptyBorder(0, 0, 5, 5));
-		errorFrame.setContentPane(errorPane);
-		errorPane.setLayout(null);
-
-		JLabel lblA = new JLabel(error);
-		lblA.setBounds(12, 43, 426, 31);
-		errorPane.add(lblA);
-		errorFrame.setVisible(true);
-
-		JButton btnOK = new JButton("OK");
-		btnOK.setBounds(40, 100, 117, 25);
-		btnOK.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				errorFrame.setVisible(false);
-			}
-		});
-		//btnOK.setColor();
-		errorFrame.add(btnOK);
+	/*
+	 * Creates a popup for displaying a certain string error
+	 */
+	private void errorMessage(String error){
+		JOptionPane.showMessageDialog(this, error);
 	}
 
 	/*
 	 * Checks that a video/ audio name that user inputs contains and avi or mp4 extension
 	 */
-	public void nameWithExtensions(String s){
+	private void nameWithExtensions(String s){
 		extension = ".mp3";
 		if (s.endsWith(".mp3")){
 			extension = "";
 		}
 	}
-	//return s;
-
 }
