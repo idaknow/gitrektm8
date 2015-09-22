@@ -12,6 +12,7 @@ import java.awt.CardLayout;
 
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
+import javax.swing.JOptionPane;
 import javax.swing.JSlider;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
@@ -252,7 +253,6 @@ public class Mainframe {
 		});
 		mp3Selectbtn.setBounds(503, 12, 500, 25);
 		p2.add(mp3Selectbtn);
-
 		//__________________________________________________________________________ VOLUME SLIDER
 		slider = new JSlider();
 		slider.addChangeListener(new ChangeListener() {
