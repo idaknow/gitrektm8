@@ -1,4 +1,21 @@
 import java.awt.BorderLayout;
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+import javax.swing.JTextArea;
+import javax.swing.JButton;
+import java.awt.Color;
+import javax.swing.JLabel;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 
 public class CommentaryAdd extends JFrame {
@@ -10,6 +27,9 @@ public class CommentaryAdd extends JFrame {
 	protected static CommentaryAdd frame;
 	private JTextArea txtrA;
 	protected String commentary;
+	JFrame errorFrame;
+	JPanel errorPane;
+	String extension;
 	/**
 	 * Launch the application.
 	 */
@@ -19,6 +39,7 @@ public class CommentaryAdd extends JFrame {
 				try {
 					frame = new CommentaryAdd();
 					frame.setVisible(true);
+					frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -34,6 +55,7 @@ public class CommentaryAdd extends JFrame {
 		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 
@@ -63,15 +85,32 @@ public class CommentaryAdd extends JFrame {
 		saveToMp3Btn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (txtLengthCheck(txtrA.getText())){
-				commentary = "echo "+ "\"" + txtrA.getText() + "\"";
-				//ProcessBuilder pb1 = new ProcessBuilder("/bin/bash","-c", commentary + " > filename.txt");
-				ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c","text2wave filename.txt -o MyWav.mp3");
-				try {
-					//Process p1 = pb1.start();
-					Process p = pb.start();
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}}
+
+					String userMp3Name = nameFilePopup();
+					boolean acceptableName = true;
+
+					// check name doesn't already exist
+					//JOptionPane.showOptionDialog(psmp3, "Name already exists. Enter a unique name", "Error",JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[0]);
+					// check name doesn't contain spaces, symbols, isn't null
+					nameWithExtensions(userMp3Name);
+					File f = new File(userMp3Name + extension);//not accouting for extension
+					if (!MediaSelection.checkForSpaces(userMp3Name)){
+						errorMessage("Spaces bro");
+						acceptableName = false;
+					} else if (f.exists()) {
+						errorMessage("existingfile");
+						acceptableName = false;
+					}
+					
+					commentary = "echo "+ "\"" + txtrA.getText() + "\"";
+					ProcessBuilder pb1 = new ProcessBuilder("/bin/bash","-c", commentary + " > .filename.txt");
+					ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c","text2wave .filename.txt -o " + userMp3Name + ".mp3");
+					try {
+						Process p1 = pb1.start();
+						Process p = pb.start();
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}}
 				//MediaSelection.popupSubmitmp3();
 			}
 		});
@@ -79,7 +118,7 @@ public class CommentaryAdd extends JFrame {
 		contentPane.add(saveToMp3Btn);
 
 		//__________________________________________________________________________ CANCEL BUTTON
-		JButton cancelBtn = new JButton("Cancel");
+		JButton cancelBtn = new JButton("Back");
 		cancelBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				frame.setVisible(false);
@@ -117,4 +156,45 @@ public class CommentaryAdd extends JFrame {
 			e1.printStackTrace();
 		}
 	}
+	public String nameFilePopup() {
+		String info = JOptionPane.showInputDialog(this, "Save new MP3 File as:");
+		return info;
+	}
+
+	public void errorMessage(String error){
+		errorFrame = new JFrame();
+		errorFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		errorFrame.setBounds(500, 170, 200, 170);
+		errorPane = new JPanel();
+		errorPane.setBorder(new EmptyBorder(0, 0, 5, 5));
+		errorFrame.setContentPane(errorPane);
+		errorPane.setLayout(null);
+
+		JLabel lblA = new JLabel(error);
+		lblA.setBounds(12, 43, 426, 31);
+		errorPane.add(lblA);
+		errorFrame.setVisible(true);
+
+		JButton btnOK = new JButton("OK");
+		btnOK.setBounds(40, 100, 117, 25);
+		btnOK.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				errorFrame.setVisible(false);
+			}
+		});
+		//btnOK.setColor();
+		errorFrame.add(btnOK);
+	}
+
+	/*
+	 * Checks that a video/ audio name that user inputs contains and avi or mp4 extension
+	 */
+	public void nameWithExtensions(String s){
+		extension = ".mp3";
+		if (s.endsWith(".mp3")){
+			extension = "";
+		}
+	}
+	//return s;
+
 }
