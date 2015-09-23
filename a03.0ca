@@ -1,0 +1,190 @@
+import java.awt.BorderLayout;
+import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+import javax.swing.JTextArea;
+import javax.swing.JButton;
+import java.awt.Color;
+import javax.swing.JLabel;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+
+
+public class CommentaryAdd extends JFrame {
+
+	/*
+	 * declared variables required
+	 */
+	private JPanel contentPane;
+	protected static CommentaryAdd frame;
+	private JTextArea txtrA;
+	protected String commentary;
+	protected JFrame errorFrame;
+	protected JPanel errorPane;
+	protected String extension;
+	protected String userMp3Name = null;
+	protected boolean acceptableName = false;
+
+	/**
+	 * Launch the frame.
+	 */
+	public static void start() {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					frame = new CommentaryAdd();
+					frame.setVisible(true);
+					frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the frame w/ buttons & functionality
+	 */
+	public CommentaryAdd() {
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setBounds(100, 100, 450, 300);
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+
+		setContentPane(contentPane);
+		contentPane.setLayout(null);
+
+		//__________________________________________________________________________ COMMENTARY TO ADD
+		txtrA = new JTextArea();
+		txtrA.setBackground(Color.CYAN);
+		txtrA.setLineWrap(true);
+		txtrA.setText("Add Commentary here");
+		txtrA.setBounds(25, 37, 392, 137);
+		contentPane.add(txtrA);
+
+		//__________________________________________________________________________ PREVIEW BUTTON
+		JButton btnPreview = new JButton("Preview");
+		btnPreview.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (txtLengthCheck(txtrA.getText())){
+					festivalPreview();
+				}
+			}
+		});
+		btnPreview.setBounds(25, 235, 117, 25);
+		contentPane.add(btnPreview);
+
+		//__________________________________________________________________________ SAVE TO MP3 BUTTON
+		JButton saveToMp3Btn = new JButton("save to mp3");
+		saveToMp3Btn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (txtLengthCheck(txtrA.getText())){ // checks length of text < 100 characters
+
+					userMp3Name = nameFilePopup();
+					if (userMp3Name != null){
+						nameWithExtensions(userMp3Name);// checks if name has extension
+
+						File f = new File(userMp3Name + extension);//not accouting for extension
+						if (!MediaSelection.checkForSpaces(userMp3Name)){ // check name doesn't contain spaces, symbols, isn't null
+							errorMessage("Spaces bro");
+							acceptableName = false;
+						} else if (f.exists()) { // check name doesn't already exist
+							errorMessage("existingfile");
+							acceptableName = false;
+						} else { // name doesn't exist and passed checkForSpaces
+							acceptableName = true;
+						}
+
+						if (acceptableName){
+							commentary = "echo "+ "\"" + txtrA.getText() + "\"";
+							ProcessBuilder pb1 = new ProcessBuilder("/bin/bash","-c", commentary + " > .filename.txt");
+							ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c","text2wave .filename.txt -o " + userMp3Name + extension);
+							try {
+								Process p1 = pb1.start();
+								Process p = pb.start();
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
+						}
+					}
+				}
+				//MediaSelection.popupSubmitmp3();
+			}
+		});
+		saveToMp3Btn.setBounds(148, 235, 139, 25);
+		contentPane.add(saveToMp3Btn);
+
+		//__________________________________________________________________________ CANCEL BUTTON
+		JButton cancelBtn = new JButton("Back");
+		cancelBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				frame.setVisible(false);
+			}
+		});
+		cancelBtn.setBounds(311, 235, 117, 25);
+		contentPane.add(cancelBtn);
+
+		//__________________________________________________________________________ MAX WORDS LABEL
+		JLabel lblMaxWords = new JLabel("Max. 100 characters");
+		lblMaxWords.setBounds(295, 186, 133, 15);
+		contentPane.add(lblMaxWords);
+	}
+
+	/*
+	 * Checks the length of the input is less 101 characters
+	 * This means the text won't be too long that festival will start to struggle to keep up
+	 */
+	private boolean txtLengthCheck(String txt){
+		if (txt.length() <= 100){
+			return true;
+		}
+		return false;
+	}
+
+	/*
+	 * Does the festival preview
+	 */
+	private void festivalPreview(){
+		commentary = "echo \" " + txtrA.getText() + "\" | festival --tts";
+		ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c" , commentary);
+		try {
+			Process process = pb.start();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	}
+
+	/*
+	 * This creates a pop up asking for the file name input
+	 */
+	private String nameFilePopup() {
+		String info = JOptionPane.showInputDialog(this, "Save new MP3 File as:");
+		return info;
+	}
+
+	/*
+	 * Creates a popup for displaying a certain string error
+	 */
+	private void errorMessage(String error){
+		JOptionPane.showMessageDialog(this, error);
+	}
+
+	/*
+	 * Checks that a video/ audio name that user inputs contains and avi or mp4 extension
+	 */
+	private void nameWithExtensions(String s){
+		extension = ".mp3";
+		if (s.endsWith(".mp3")){
+			extension = "";
+		}
+	}
+}
